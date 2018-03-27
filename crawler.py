@@ -2,9 +2,12 @@
 
 
 
-#添加多进程，多少个套图多少个进程
-#应该是受操作系统限制，只有2个进程在跑
-
+#修改多进程为进程池
+#htop中有7个进程在跑
+#有多进程效果，应该是受网络连接数限制了，应该是和网站有关
+#在程序运行后，net -nat中连接数量一直在增加
+#每下一个图片就会建一个连接？
+#这会导致连接过多从而被网站限制？
 
 
 import requests
@@ -12,15 +15,16 @@ from bs4 import BeautifulSoup
 from urllib import request
 import os
 import re
-from multiprocessing import Process
+from multiprocessing import Pool
 
 def getimg(base_url,url,path):
     headers = {
-    'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
+    'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/58.0.3029.110 Chrome/58.0.3029.110 Safari/537.36',
     "Host:": "192.168.1.1",
-    "Connection":"close",
-    "Accept-Encoding": "identity",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+    "Connection":"keep-alive",
+    "Accept-Encoding": "gzip, deflate, sdch, br",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Referer":"http://www.99mm.me"
 }
     #print(url)
     r = requests.get(url,headers)
@@ -50,7 +54,15 @@ def getimg(base_url,url,path):
         request.urlretrieve(t2.find('img').get('src').strip(),path+'/'+str(i)+'.jpg')
 
 def getimglink(base_url,url,path):
-    r = requests.get(url)
+    headers = {
+    'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/58.0.3029.110 Chrome/58.0.3029.110 Safari/537.36',
+    "Host:": "192.168.1.1",
+    "Connection":"keep-alive",
+    "Accept-Encoding": "gzip, deflate, sdch, br",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+}
+
+    r = requests.get(url,headers)
     #解决乱码
     r.encoding = 'utf-8'
     soup = BeautifulSoup(r.text)
@@ -83,23 +95,21 @@ if __name__ == '__main__':
     url = base_url
 
     #多进程
-    jobs = []
+    process = 4
+    pool = Pool(process)
     for p in range(1,page+1):
         if(page == 1):
             #getimglink(base_url,url,path)
-            j = Process(target=getimglink,args=(base_url,url,path))
-            jobs.append(j)
+
+            pool.apply_async(getimglink,(base_url,url,path))
         else:
             url = base_url + '/hot/mm_4_'+str(page)+'.html'
             #getimglink(base_url,url,path)
-            j = Process(target=getimglink,args=(base_url,url,path))
-            jobs.append(j)
 
-    for j in jobs:
-        j.start()
-    for j in jobs:
-        j.join()
+            pool.apply_async(getimglink,(base_url,url,path))
 
+    pool.close()
+    pool.join()
 
 
 
