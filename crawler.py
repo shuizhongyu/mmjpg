@@ -2,7 +2,8 @@
 
 
 
-#将模板重新用于99mm
+#添加多进程，多少个套图多少个进程
+#应该是受操作系统限制，只有2个进程在跑
 
 
 
@@ -79,11 +80,26 @@ if __name__ == '__main__':
     #抓几页，每页10个
     page = 1
     path = './99mm/'
-    url=base_url
+    url = base_url
+
+    #多进程
+    jobs = []
     for p in range(1,page+1):
         if(page == 1):
-            getimglink(base_url,url,path)
+            #getimglink(base_url,url,path)
+            j = Process(target=getimglink,args=(base_url,url,path))
+            jobs.append(j)
         else:
             url = base_url + '/hot/mm_4_'+str(page)+'.html'
-            getimglink(base_url,url,path)
+            #getimglink(base_url,url,path)
+            j = Process(target=getimglink,args=(base_url,url,path))
+            jobs.append(j)
+
+    for j in jobs:
+        j.start()
+    for j in jobs:
+        j.join()
+
+
+
 
