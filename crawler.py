@@ -2,60 +2,113 @@
 
 
 
-#17786
-#成功了，终于在一个网站成功了，证明以前的都是网站做了限制
-#我的多进程好像用错地方了，需要修改
-#应该是抓每个图集一个进程，而不是抓每页的所有图集一个进程
-#之前的多进程设置多页时是有作用的
-#已修改为每个图集一个进程
-#效果显著，一下子出现很多文件夹
+#重新用到mmjpg，试试越过反盗链
+#失败，再换网站
+#成功，headers中host设为192.168.1.1的原因，删除后正常
+#添加随机agent,依然不行
+#独立获得网页函数
+#爬了10页900+M
+#可以再修改，爬完整个网站
 
-
-#跑了一晚上试了一下，抓到200+M图片
-#其实在跑的前两个小时已经抓了这么多了
-#后面虽然链接一直在，但没抓到东西
 
 import requests
 from bs4 import BeautifulSoup
 from urllib import request
 import os
 import re
+import random
 from multiprocessing import Pool
 
-def getimg(base_url,url,path):
+
+def geturl(url):
     headers = {
     'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/58.0.3029.110 Chrome/58.0.3029.110 Safari/537.36',
-    "Host:": "192.168.1.1",
+    "Host": "192.168.1.1",
     "Connection":"keep-alive",
     "Accept-Encoding": "gzip, deflate, sdch, br",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Referer":"http://www.17786.com"
 }
+    user_agent = [
+    'Mozilla/5.0 (Windows NT 5.2) AppleWebKit/534.30 (KHTML, like Gecko) Chrome/12.0.742.122 Safari/534.30',
+    'Mozilla/5.0 (Windows NT 5.1; rv:5.0) Gecko/20100101 Firefox/5.0',
+    'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.2; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET4.0E; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)',
+    'Opera/9.80 (Windows NT 5.1; U; zh-cn) Presto/2.9.168 Version/11.50',
+    'Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1',
+    'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022; .NET4.0E; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)'
+    ]
+    #设置网页编码格式，解码获取到的中文字符
+    #构造http请求头，设置user-agent
+    headers["User-Agent"] = random.choice(user_agent)
+    headers["Referer"] = "http://www.mmjpg.com"
+
+    try:
+        #r = requests.get(url,headers = headers)
+        r = requests.get(url)
+        r.encoding = 'utf-8'
+    except BaseException as e:
+        print("exception:",e)
+        return None
+
+    return r
+
+def downjpg(src,path):
+    headers = {
+    'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/58.0.3029.110 Chrome/58.0.3029.110 Safari/537.36',
+    "Connection":"keep-alive",
+    "Accept-Encoding": "gzip, deflate, sdch, br",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+}
+    user_agent = [
+    'Mozilla/5.0 (Windows NT 5.2) AppleWebKit/534.30 (KHTML, like Gecko) Chrome/12.0.742.122 Safari/534.30',
+    'Mozilla/5.0 (Windows NT 5.1; rv:5.0) Gecko/20100101 Firefox/5.0',
+    'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.2; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET4.0E; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)',
+    'Opera/9.80 (Windows NT 5.1; U; zh-cn) Presto/2.9.168 Version/11.50',
+    'Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1',
+    'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022; .NET4.0E; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)'
+    ]
+    #设置网页编码格式，解码获取到的中文字符
+    #构造http请求头，设置user-agent
+    #headers["User-Agent"] = random.choice(user_agent)
+    headers["User-Agent"] = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/58.0.3029.110 Chrome/58.0.3029.110 Safari/537.36"
+    headers["Referer"] = "http://jpg.mmjpg.com"
+    img_content = requests.get(src,headers = headers).content
+    #img_content = requests.get(src,).content
+    with open(path,'wb') as f:
+        f.write(img_content)
+
+
+def getimg(base_url,url,path):
     #print(url)
-    r = requests.get(url,headers)
-    r.encoding = 'utf-8'
-    soup = BeautifulSoup(r.text)
+    r = geturl(url)
+    soup = BeautifulSoup(r.text,"lxml")
 
     #获取总页码
-    total = 10
+    temp = soup.find('div',{"class":"clearfloat"}).find("script").text
+    total = int(re.findall("\d+",temp)[2])
+    print(total)
     #print(soup.prettify())
     #print("total:"+str(total)+"!!!!!!!!")
 
-    t = soup.find('div',id="picBody")
-    request.urlretrieve(t.find('img').get('src').strip(),path+'/'+'1.jpg')
+    t = soup.find('div',id="content")
+    #request.urlretrieve(t.find('img').get('src').strip(),path+'/'+'1.jpg')
+    #print(t.find('img').get('src'))
+    downjpg(t.find('img').get('src').strip(),path+'/1.jpg')
+
     if total<=1:
         return
     for i in range(2,total+1):
-        url2 = url[0:-5] + '_' + str(i) + ".html"
-        r2 = requests.get(url2,headers)
+        url2 = url + '/' + str(i)
+        r2 = geturl(url2)
         r2.encoding = 'utf-8'
         #f = open('./out.txt','w')
         #f.write(r2.text)
         #f.close()
-        soup2 = BeautifulSoup(r2.text)
-        t2 = soup2.find('div',id="picBody")
+        soup2 = BeautifulSoup(r2.text,"lxml")
+        t2 = soup2.find('div',id="content")
         #print(t2.find('img').get('src'))
-        request.urlretrieve(t2.find('img').get('src').strip(),path+'/'+str(i)+'.jpg')
+        #request.urlretrieve(t2.find('img').get('src').strip(),path+'/'+str(i)+'.jpg')
+        downjpg(t2.find('img').get('src').strip(),path+'/'+str(i)+'.jpg')
+        #print("image down!")
 
 def getimglink(base_url,url,path,pool):
     headers = {
@@ -64,19 +117,18 @@ def getimglink(base_url,url,path,pool):
     "Connection":"keep-alive",
     "Accept-Encoding": "gzip, deflate, sdch, br",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Referer":"http://www.17786.com"
+    "Referer":"http://www.mmjpg.com"
 }
 
-    r = requests.get(url,headers)
-    #解决乱码
-    r.encoding = 'utf-8'
-    soup = BeautifulSoup(r.text)
+    r = geturl(url)
+    r.encoding = "utf-8"
+    soup = BeautifulSoup(r.text,"lxml")
 
     x = 1
     for img in soup.find_all('a',attrs={"target":"_blank"}):
         #print('!!!!!!!')
         #print(img.get('href'))
-        image_url = base_url + str(img.get('href'))[16:]
+        image_url = str(img.get('href'))
         #这样查出来的标签有一个是下面的标题，是多余的
         if img.find('img')== None:
             continue
@@ -85,9 +137,8 @@ def getimglink(base_url,url,path,pool):
         #创建文件夹
         if not os.path.exists(path+name):
             os.makedirs(path+name)
-
-        pool.apply_async(getimg,(base_url,image_url,path+name))
         #getimg(base_url,image_url,path+name)
+        pool.apply_async(getimg,(base_url,image_url,path+name))
         x += 1
         #request.urlretrieve(image_url.strip(),'./pic/%s.jpg' % x)
 
@@ -95,22 +146,21 @@ def getimglink(base_url,url,path,pool):
 if __name__ == '__main__':
 
 
-    base_url = 'http://www.17786.com/ent/meinvtupian/'
+    url = base_url = 'http://www.mmjpg.com/'
     #抓几页，每页10个
-    page = 20
+    page = 10
     path = './mmjpg/'
-    url = base_url
 
     #多进程
-    process = 8
+    process = 4
     pool = Pool(process)
-    for p in range(1,page+1):
-        if(p == 1):
+    for page in range(1,page+1):
+        if(page == 1):
             getimglink(base_url,url,path,pool)
 
             #pool.apply_async(getimglink,(base_url,url,path))
         else:
-            url = base_url + '/index_' + str(page) + ".html"
+            url = base_url + '/home/' + str(page)
 
             getimglink(base_url,url,path,pool)
 
