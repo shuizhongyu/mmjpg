@@ -5,4 +5,4 @@
 并支持多进程。
 爬取结果如下：
 ![image](https://github.com/shuizhongyu/mmjpg/blob/master/pic/1.png)
-![image](mmjpg/pic/2.png)
+![image](https://github.com/shuizhongyu/mmjpg/blob/master/pic/2.png)
