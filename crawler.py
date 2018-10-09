@@ -52,7 +52,7 @@ def geturl(url):
     return r
 
 def downjpg(src,path):
-    #存在不重新下载
+    ##存在不重新下载
     if not(os.path.exists(path)):
         print("download "+path)
     else:
@@ -86,6 +86,19 @@ def downjpg(src,path):
 
 def getimg(base_url,url,path):
     #print(url)
+    ##文件夹存在且数量大于10时，跳过
+    if(os.path.isdir(path)):
+        print("exists folder"+path)
+        n=len([x for x in os.listdir(os.path.dirname(path+"/"))])
+        print(n)
+        if(n>=10):
+            print("exists "+path)
+            return
+        else:
+            print("download "+path)
+    else:
+        print("download "+path)
+
     r = geturl(url)
     soup = BeautifulSoup(r.text,"lxml")
 
@@ -118,6 +131,8 @@ def getimg(base_url,url,path):
         downjpg(t2.find('img').get('src').strip(),img_path)
 
     print(total+" imgs down!")
+
+
 
 def getimglink(base_url,url,path,pool):
     headers = {
@@ -161,7 +176,7 @@ if __name__ == '__main__':
     path = './mmjpg/'
 
     #多进程
-    process = 4
+    process = 1
     pool = Pool(process)
     for page in range(1,page+1):
         if(page == 1):
