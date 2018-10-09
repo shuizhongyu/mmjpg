@@ -52,6 +52,13 @@ def geturl(url):
     return r
 
 def downjpg(src,path):
+    #存在不重新下载
+    if not(os.path.exists(path)):
+        print("download "+path)
+    else:
+        print("exists "+path)
+        return
+
     headers = {
     'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/58.0.3029.110 Chrome/58.0.3029.110 Safari/537.36',
     "Connection":"keep-alive",
@@ -85,7 +92,6 @@ def getimg(base_url,url,path):
     #获取总页码
     temp = soup.find('div',{"class":"clearfloat"}).find("script").text
     total = int(re.findall("\d+",temp)[2])
-    print(total)
     #print(soup.prettify())
     #print("total:"+str(total)+"!!!!!!!!")
 
@@ -107,8 +113,11 @@ def getimg(base_url,url,path):
         t2 = soup2.find('div',id="content")
         #print(t2.find('img').get('src'))
         #request.urlretrieve(t2.find('img').get('src').strip(),path+'/'+str(i)+'.jpg')
-        downjpg(t2.find('img').get('src').strip(),path+'/'+str(i)+'.jpg')
-        #print("image down!")
+        #加判断，如果存在不下载图片，可续传
+        img_path=path+'/'+str(i)+'.jpg'
+        downjpg(t2.find('img').get('src').strip(),img_path)
+
+    print(total+" imgs down!")
 
 def getimglink(base_url,url,path,pool):
     headers = {
